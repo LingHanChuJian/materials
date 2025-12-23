@@ -40,7 +40,7 @@ class NFP:
         
         return {
             "tree": poly_tree,
-            "ref_offset": (minx_b, miny_b),
+            "ref_offset": (-minx_b, -miny_b),
             "gap": self.gap
         }
 
@@ -55,16 +55,13 @@ def is_position_valid(poly_tree, x, y, scale=settings.nfp_scale):
     # 返回值：0-不在多边形内, 1-在多边形内, -1-在边界上
 
     def check_recursive(node):
-        is_inside = pyclipper.PointInPolygon(pt, node.Contour) != 0
-        
-        if is_inside:
-            # 如果在当前环内，检查它的子节点（即孔洞）
+        # res: 1(in), -1(on), 0(out)
+        res = pyclipper.PointInPolygon(pt, node.Contour)
+        if res != 0: # 只要触碰（包含边界 -1），就进入判断
             for child in node.Childs:
                 if check_recursive(child):
-                    # 如果点在子节点（孔）内，说明它是安全的（可以嵌套）
-                    return False 
-            # 如果不在任何孔内，但在当前环内，说明是禁区（重叠）
-            return True
+                    return False # 在孔洞内，安全
+            return True # 在实体内，碰撞
         return False
 
     # 根节点的 Childs 是所有的 Outer Contours

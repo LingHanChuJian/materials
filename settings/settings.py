@@ -9,7 +9,7 @@ class Settings:
     spacing: float = 5.0
 
     # 允许的旋转角度列表（可以根据需要增加更多角度，如 [0, 90, 180, 270]）
-    angles: list[float] = [0.0, 180.0]
+    angles: list[float] = [0.0]
 
     # 图像DPI（像素/毫米），用于将像素转换为毫米
     dpi: float = 96.0

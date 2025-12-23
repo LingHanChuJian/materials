@@ -16,12 +16,38 @@ class GA:
         # 4️⃣ 修复：Fitness Cache (显著提升计算速度)
         self.fitness_cache = {}
 
-        # 1️⃣ 修复：支持外部传入角度
+        # 计算每个零件的面积并按降序排列（大料优先）
+        piece_areas = []
+        for idx, piece in enumerate(pieces):
+            # 使用 Shapely 的 area 属性计算面积
+            poly = piece.get_rotated_poly(0)  # 使用0度角度计算面积
+            area = poly.area
+            piece_areas.append((idx, area))
+        
+        # 按面积降序排列
+        piece_areas.sort(key=lambda x: x[1], reverse=True)
+        sorted_indices = [idx for idx, area in piece_areas]
+        
+        # 1️⃣ 修复：支持外部传入角度 + 大料优先策略
         self.population = []
-        for _ in range(pop_size):
+        for i in range(pop_size):
             genome = []
-            indices = list(range(len(pieces)))
-            random.shuffle(indices)
+            # 前 20% 的个体：严格按面积降序（精英贪心策略）
+            if i < pop_size * 0.2:
+                indices = sorted_indices.copy()
+            # 中间 60% 的个体：在面积降序基础上引入轻微扰动
+            elif i < pop_size * 0.8:
+                indices = sorted_indices.copy()
+                # 随机交换 2-5 个位置，保持大体有序
+                num_swaps = random.randint(2, 5)
+                for _ in range(num_swaps):
+                    idx1, idx2 = random.sample(range(len(indices)), 2)
+                    indices[idx1], indices[idx2] = indices[idx2], indices[idx1]
+            # 后 20% 的个体：完全随机（保持种群多样性）
+            else:
+                indices = list(range(len(pieces)))
+                random.shuffle(indices)
+            
             for idx in indices:
                 genome.append({
                     'id': idx, 

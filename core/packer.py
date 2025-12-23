@@ -176,7 +176,7 @@ class Packer:
         
         # 按 Bottom-Left 策略排序（按 y 升序，x 升序）
         valid_candidates.sort(key=lambda p: (p[1], p[0]))
-        
+
         return valid_candidates
 
     def _has_collision(self, test_poly):
@@ -217,8 +217,8 @@ class Packer:
             rel_y = y - placed['y']
 
             # 补偿 NFP 计算时 B 的参考点偏移
-            check_x = rel_x - nfp_data['ref_offset'][0]
-            check_y = rel_y - nfp_data['ref_offset'][1]
+            check_x = rel_x + nfp_data['ref_offset'][0]
+            check_y = rel_y + nfp_data['ref_offset'][1]
 
             # 使用你之前写的 NFP.is_position_valid (点在多边形内判定)
             if not is_position_valid(nfp_data['tree'], check_x, check_y, settings.nfp_scale):

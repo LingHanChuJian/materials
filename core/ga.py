@@ -17,11 +17,14 @@ class GA:
         self.fitness_cache = {}
 
         # 计算每个零件的面积并按降序排列（大料优先）
+        # 同时缓存面积信息供后续使用
+        self.piece_areas = {}  # 缓存面积信息
         piece_areas = []
         for idx, piece in enumerate(pieces):
             # 使用 Shapely 的 area 属性计算面积
             poly = piece.get_rotated_poly(0)  # 使用0度角度计算面积
             area = poly.area
+            self.piece_areas[idx] = area  # 缓存面积
             piece_areas.append((idx, area))
         
         # 按面积降序排列
@@ -55,6 +58,17 @@ class GA:
                 })
             self.population.append(genome)
 
+    def order_penalty(self, genome):
+        """
+        顺序惩罚项：大件靠后会被明显扣分
+        让 GA 永远尊重"大料优先"原则
+        """
+        penalty = 0.0
+        for i, item in enumerate(genome):
+            area = self.piece_areas[item['id']]
+            penalty += area * i
+        return penalty
+
     def calculate_fitness(self, genome):
         # 4️⃣ 修复：缓存 key 序列化
         key = tuple((item['id'], item['angle']) for item in genome)
@@ -70,9 +84,18 @@ class GA:
             # 调用 NFP + Skyline 放置逻辑
             packer.add_piece_with_nfp(item['id'], item['angle'], poly, self.nfp_cache, poly_original)
         
+        # ✅ 问题①：加入顺序惩罚项，让 GA 永远尊重"大料优先"
+        order_pen = self.order_penalty(genome)
+        
+        # ✅ 问题③：加入 Skyline 轮廓粗糙度惩罚（如果可用）
+        roughness = 0.0
+        if hasattr(packer, 'skyline') and len(packer.skyline) > 1:
+            for i in range(1, len(packer.skyline)):
+                roughness += abs(packer.skyline[i][1] - packer.skyline[i-1][1])
+        
         # 3️⃣ 修复：数值稳定性，使用负长度。追求越大的值越好
-        # 增加一个基准值避免负数（如果后续需要做轮盘赌）
-        score = -packer.total_length 
+        # 多目标优化：高度 + 顺序 + 平整度
+        score = -packer.total_length - 0.00005 * order_pen - 0.00001 * roughness
         
         self.fitness_cache[key] = score
         return score
@@ -101,13 +124,22 @@ class GA:
         return child
 
     def mutate(self, genome):
-        """变异：引入多态变异"""
-        if random.random() < 0.2: # 交换变异
-            idx1, idx2 = random.sample(range(len(genome)), 2)
-            genome[idx1], genome[idx2] = genome[idx2], genome[idx1]
+        """
+        ✅ 问题②：分段变异（工业常用）
+        保护大料骨架，只在小件层搜索
+        """
+        n = len(genome)
         
-        if random.random() < 0.1: # 角度变异（从传入的角度集中选）
-            idx = random.randint(0, len(genome)-1)
+        # 交换变异：只允许在后 70% 区间操作
+        if random.random() < 0.2:
+            start = int(n * 0.3)  # 前 30% 为大料保护区
+            if n - start >= 2:  # 确保有足够的元素可以交换
+                idx1, idx2 = random.sample(range(start, n), 2)
+                genome[idx1], genome[idx2] = genome[idx2], genome[idx1]
+        
+        # 角度变异：允许全局（角度不影响顺序结构）
+        if random.random() < 0.1:
+            idx = random.randint(0, n - 1)
             genome[idx]['angle'] = random.choice(self.allowed_angles)
 
     def run(self, visualization_callback=None, visualize_interval=10):

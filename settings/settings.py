@@ -1,6 +1,6 @@
 class Settings:
     # 排料板宽度（mm）
-    width: float = 2500.0
+    width: float = 3500.0
 
     # 排料板长度（mm，无限延伸时使用足够大的值）
     length: float = 10000.0

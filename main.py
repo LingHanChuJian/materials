@@ -49,7 +49,7 @@ def main():
     # 3. 配置遗传算法参数
     print("\n[3/4] 配置遗传算法参数...")
     pop_size = 40
-    generations = 20
+    generations = 50
     visualize_interval = 5  # 每 5 代输出一次可视化
     
     print(f"  种群大小: {pop_size}")

@@ -10,7 +10,6 @@ class SkylineNode:
     def __repr__(self) -> str:
         return f"SkylineNode(x={self.x}, y={self.y}, width={self.width})"
 
-
 class SkylinePacker:
     def __init__(self, bin_w, bin_h):
         self.bin_w = bin_w

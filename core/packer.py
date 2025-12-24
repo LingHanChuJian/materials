@@ -127,7 +127,7 @@ class Packer:
         
         # 总是包含原点
         candidates.add((0.0, 0.0))
-        
+
         # 为每个已放置的零件生成候选位置
         for item in self.placed_items:
             placed_poly = item['poly']

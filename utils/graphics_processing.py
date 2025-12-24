@@ -43,7 +43,7 @@ class GraphicsProcessing:
                 poly_expanded = self._normalize_alignment(poly_expanded)
             else:
                 poly_expanded = poly_original
-            
+
             self.angle_cache[angle] = poly_expanded
             
         return True
